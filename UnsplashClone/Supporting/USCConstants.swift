@@ -9,3 +9,8 @@
 import Foundation
 
 public let isDev = true
+
+public let USCAccessKey = "4pRuRj8wWJJe9JDJ4dkSv1-qIlPmhc_T868012zpsq8"
+public let USCSecretKey = "9CGVBPr5v1ND3DTRuEzzebFK8yueBnpUqRfFBKulCBc"
+
+public let apiDomain = "https://api.unsplash.com"

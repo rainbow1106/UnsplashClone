@@ -21,4 +21,13 @@ final class NaviManager{
         UIApplication.shared.windows.first?.rootViewController = naviC
         naviC.viewControllers.append(vc)
     }
+    
+    public func detailVC(userinfo: DetailVCUserinfo){
+        
+        let vc = DetailVC()
+        vc.userinfo = userinfo
+        
+        UIApplication.topViewController()?.present(vc, animated: true, completion: nil)
+        
+    }
 }

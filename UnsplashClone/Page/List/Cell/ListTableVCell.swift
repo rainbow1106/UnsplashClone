@@ -9,11 +9,25 @@
 import UIKit
 import Kingfisher
 
+struct ListTableVCellDPModel {
+    
+    var id: String = ""
+    var width: Int = 0
+    var height: Int = 0
+    var name: String?
+    var color: UIColor?
+    
+    var imgUrl_raw: String?
+    var imgUrl_thumb: String?
+    var imgUrl_original: String?
+    
+}
 final class ListTableVCell: UITableViewCell {
 
     // ibs
     @IBOutlet weak var imgV: UIImageView!
     @IBOutlet weak var nameLB: UILabel!
+    @IBOutlet weak var botLine: UIView!
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -31,20 +45,34 @@ final class ListTableVCell: UITableViewCell {
             $0.textColor = UIColor.white
             $0.textAlignment = .left
         }
+        self.botLine.do{
+            $0.backgroundColor = .white
+        }
     }
     private func resetData(){
         
         self.imgV.image = nil
         self.nameLB.text = nil
+        self.imgV.backgroundColor = .white
         
     }
-    public func mapCellData(){
+    public func mapCellData(cellData: ListTableVCellDPModel){
         
         self.resetData()
+        
+        self.imgV.backgroundColor = cellData.color
+        
+        if let uThumb = cellData.imgUrl_thumb,
+            let imgUrl = URL(string: uThumb){
+            self.imgV.kf.setImage(with: imgUrl)
+        }
+        self.nameLB.text = cellData.name
+        
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
         self.imgV.kf.cancelDownloadTask()
     }
+    
 }

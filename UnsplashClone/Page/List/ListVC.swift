@@ -42,8 +42,6 @@ final class ListVC: BaseVC {
         self.initVState()
         self.bindUIEvents()
         self.bindDatas()
-        
-        self.view.showSubviews()
     }
 
 
@@ -68,6 +66,8 @@ final class ListVC: BaseVC {
             
             $0.clipsToBounds = true
             $0.layer.cornerRadius = $0.frame.height / 4
+            $0.layer.borderWidth = 1
+            $0.layer.borderColor = UIColorFromRGB("dcdcdc").cgColor
             $0.backgroundColor = UIColor.white
             
             let leftV = UIView()
@@ -79,6 +79,8 @@ final class ListVC: BaseVC {
                 self.searchTF.leftView = $0
             }
             $0.leftViewMode = .always
+            
+            
         }
         self.searchCont.do{
             $0.backgroundColor = .clear
@@ -89,6 +91,8 @@ final class ListVC: BaseVC {
             
             $0.clipsToBounds = true
             $0.layer.cornerRadius = $0.frame.height / 4
+            $0.layer.borderWidth = 1
+            $0.layer.borderColor = UIColorFromRGB("dcdcdc").cgColor
             $0.backgroundColor = UIColor.white
         }
         
@@ -99,8 +103,9 @@ final class ListVC: BaseVC {
             $0.allowsSelection = true
             $0.allowsMultipleSelection = false
             
+            $0.separatorStyle = .none
+            
             $0.rx.setDelegate(self).disposed(by: self.disposeBag)
-            $0.rx.setDataSource(self).disposed(by: self.disposeBag)
             
             $0.register(UINib(nibName: "ListTableVCell", bundle: nil),
                         forCellReuseIdentifier: ListTableVCell.description())
@@ -178,7 +183,69 @@ final class ListVC: BaseVC {
         let gesture = UITapGestureRecognizer(target: self, action: #selector(self.endKeyboard))
         gesture.cancelsTouchesInView = false
         self.view.addGestureRecognizer(gesture)
+     
+        //
+        self.tableV
+            .rx
+            .willDisplayCell
+            .asDriver()
+            .filter { [weak self] (arg) -> Bool in
+                
+                guard let self = self else{
+                    return false
+                }
+                let lastIdx = self.vm.output.itemList.value.count - 1
+                
+                guard lastIdx > 0 else{
+                    return false
+                }
+                
+                return arg.indexPath.row == lastIdx
+                
+        }
+        .drive(onNext: { [weak self](_) in
+            
+            guard let self = self else{
+                return
+            }
+            
+            CommonVManager.showLoadingV()
+            self.vm
+                .input
+                .moreData(completion: CommonVManager.hideLoadingV)
+            
+        })
+            .disposed(by: self.disposeBag)
         
+        self.tableV
+            .rx
+            .itemSelected
+            .asDriver()
+            .throttle(RxTimeInterval.seconds(1))
+            .drive(onNext: { [weak self](idx) in
+                
+                guard let self = self else{
+                    return
+                }
+                
+                var userinfo = DetailVCUserinfo()
+                userinfo.selectedIdx = idx.row
+                userinfo.dataList = self.vm.output.itemList.value
+                userinfo.closeClosure = { (selectedIdx) in
+                    
+                    guard selectedIdx < self.vm.output.itemList.value.count else{
+                        return
+                    }
+                    self.tableV
+                        .scrollToRow(at: IndexPath(row: selectedIdx, section: 0),
+                                     at: UITableView.ScrollPosition.middle,
+                                     animated: true)
+                    
+                }
+                
+                NaviManager.shared.detailVC(userinfo: userinfo)
+            })
+            .disposed(by: self.disposeBag)
     }
     
     private func bindDatas(){
@@ -186,18 +253,48 @@ final class ListVC: BaseVC {
         let output = self.vm.output
         
         output
+            .error
+            .asDriver()
+            .compactMap {
+            $0
+        }
+        .drive(onNext: CommonVManager.showErrorMsg(error:))
+        .disposed(by: self.disposeBag)
+        
+        output
             .itemList
             .asDriver()
-            .distinctUntilChanged()
-            .drive(onNext: { [weak self](_) in
-                
-                guard let self = self else{
-                    return
-                }
-                self.tableV.reloadData()
-            })
-            .disposed(by: self.disposeBag)
+            .drive(self.tableV
+                .rx
+                .items(cellIdentifier: ListTableVCell.description(),
+                       cellType: ListTableVCell.self)) { (idx, cellData, cell) in
+                        
+                        cell.mapCellData(cellData: cellData)
+                        
+        }
+        .disposed(by: self.disposeBag)
+            
         
+        output
+            .randomItemList
+            .asDriver()
+            .compactMap {
+                $0.first
+        }
+        .drive(onNext: { [weak self](origin) in
+            
+            guard let self = self else{
+                return
+            }
+            guard let uImg = origin.imgUrl_thumb,
+                let uUrl = URL(string: uImg) else{
+                    return
+            }
+            self.topImgV.backgroundColor = origin.color
+            self.topImgV.kf.setImage(with: uUrl)
+            
+        })
+            .disposed(by: self.disposeBag)
 //        output
 //            .itemList
 //            .bind(to: self.tableV.rx
@@ -243,23 +340,3 @@ extension ListVC: UITableViewDelegate{
     }
 }
 
-extension ListVC: UITableViewDataSource{
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        
-        self.vm.output.itemList.value.count
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: ListTableVCell.description()) as? ListTableVCell else{
-            
-            return UITableViewCell()
-        }
-        
-        cell.nameLB.text = self.vm.output.itemList.value[indexPath.row]
-        
-        return cell
-    }
-    
-    
-}

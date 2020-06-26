@@ -25,10 +25,20 @@
                         <nil key="textColor"/>
                         <nil key="highlightedColor"/>
                     </label>
+                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="bXF-t6-9L6">
+                        <rect key="frame" x="0.0" y="199" width="378" height="1"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="1" id="SHa-uf-ukR"/>
+                        </constraints>
+                    </view>
                 </subviews>
                 <constraints>
                     <constraint firstAttribute="trailing" secondItem="XbM-xV-qv1" secondAttribute="trailing" id="0FL-hU-4Dh"/>
+                    <constraint firstItem="bXF-t6-9L6" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" id="2wm-7A-IIv"/>
+                    <constraint firstAttribute="bottom" secondItem="bXF-t6-9L6" secondAttribute="bottom" id="33R-88-BGs"/>
                     <constraint firstAttribute="bottom" secondItem="XbM-xV-qv1" secondAttribute="bottom" id="5Lw-25-Pax"/>
+                    <constraint firstAttribute="trailing" secondItem="bXF-t6-9L6" secondAttribute="trailing" id="HPT-zK-ccC"/>
                     <constraint firstItem="XbM-xV-qv1" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" id="PqO-TJ-ZAs"/>
                     <constraint firstItem="qah-wW-MJK" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="20" id="X9y-Fy-7f2"/>
                     <constraint firstItem="XbM-xV-qv1" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" id="fIM-cW-68G"/>
@@ -37,6 +47,7 @@
                 </constraints>
             </tableViewCellContentView>
             <connections>
+                <outlet property="botLine" destination="bXF-t6-9L6" id="wHs-Io-bIC"/>
                 <outlet property="imgV" destination="XbM-xV-qv1" id="w4Z-Il-vaO"/>
                 <outlet property="nameLB" destination="qah-wW-MJK" id="fHD-ka-31J"/>
             </connections>

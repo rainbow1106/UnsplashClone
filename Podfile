@@ -13,4 +13,14 @@ target 'UnsplashClone' do
   pod 'ALLoadingView'
   pod 'Toast-Swift'
   
+  pod 'RxDataSources'
+  pod 'RxSwift'
+  pod 'RxCocoa'
+  pod 'RxReachability'
+  pod 'RxAlamofire'
+  
+  pod "DeallocationChecker"
+  
+  pod 'Kingfisher'
+  
 end
