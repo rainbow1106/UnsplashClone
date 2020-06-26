@@ -1,5 +1,5 @@
 //
-//  USCConstants.swift
+//  LibManager.swift
 //  UnsplashClone
 //
 //  Created by 박병준 on 6/26/20.
@@ -8,4 +8,7 @@
 
 import Foundation
 
-public let isDev = true
+final class LibManager{
+    
+    
+}

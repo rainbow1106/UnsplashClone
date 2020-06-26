@@ -16,9 +16,9 @@ final class NaviManager{
         
         let naviC = UINavigationController()
         let vc = ListVC()
+//        let vc = TestVC()
         
-        naviC.setViewControllers([vc], animated: false)
         UIApplication.shared.windows.first?.rootViewController = naviC
-        
+        naviC.viewControllers.append(vc)
     }
 }

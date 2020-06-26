@@ -12,6 +12,9 @@ import UIKit
 extension UIView{
     func showSubviews(){
         
+        guard isDev == true else{
+            return 
+        }
         self.layer.borderColor = UIColor.red.cgColor
         self.layer.borderWidth = 1
         

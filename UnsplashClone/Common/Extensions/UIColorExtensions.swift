@@ -34,7 +34,7 @@ extension UIColor {
     
     @nonobjc class var psRandom: UIColor {
         
-        let index = arc4random() % 3
+        let index = arc4random() % 4
         
         var rColor = UIColor()
         switch index{
@@ -47,7 +47,11 @@ extension UIColor {
         case 2:
             rColor = UIColorFromRGB("00baa6", 0.1)
             break
-        
+            
+        case 3:
+            rColor = UIColorFromRGB("fefc81", 0.1)
+            break
+            
         default:
             rColor = UIColorFromRGB("00baa6", 0.1)
             break

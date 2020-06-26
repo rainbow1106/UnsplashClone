@@ -13,7 +13,7 @@ import Then
 
 class BaseVC: UIViewController {
 
-    private let disposeBag = DisposeBag()
+    let disposeBag = DisposeBag()
     
     var naviBarHidden = false
     var naviLineHidden = false
