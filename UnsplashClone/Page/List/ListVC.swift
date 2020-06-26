@@ -80,7 +80,7 @@ final class ListVC: BaseVC {
             }
             $0.leftViewMode = .always
             
-            
+            $0.returnKeyType = .search
         }
         self.searchCont.do{
             $0.backgroundColor = .clear
@@ -109,6 +109,8 @@ final class ListVC: BaseVC {
             
             $0.register(UINib(nibName: "ListTableVCell", bundle: nil),
                         forCellReuseIdentifier: ListTableVCell.description())
+            
+            $0.keyboardDismissMode = .onDrag
         }
         
     }
@@ -203,6 +205,14 @@ final class ListVC: BaseVC {
                 return arg.indexPath.row == lastIdx
                 
         }
+        .filter({ [weak self](arg) -> Bool in
+            
+            guard let self = self else{
+                return false
+            }
+            return self.vm.input.checkMoreAvailable()
+            
+        })
         .drive(onNext: { [weak self](_) in
             
             guard let self = self else{
@@ -246,6 +256,36 @@ final class ListVC: BaseVC {
                 NaviManager.shared.detailVC(userinfo: userinfo)
             })
             .disposed(by: self.disposeBag)
+        
+        self.searchBTN
+            .rx
+            .tap
+            .asDriver()
+            .throttle(RxTimeInterval.seconds(1))
+            .drive(onNext: { [weak self](_) in
+                
+                guard let self = self else{
+                    return
+                }
+                self.search()
+                
+            })
+            .disposed(by: self.disposeBag)
+        
+        self.searchTF
+            .rx
+            .controlEvent(.editingDidEndOnExit)
+            .asDriver()
+            .throttle(RxTimeInterval.seconds(1))
+            .drive(onNext: { [weak self](_) in
+                
+                guard let self = self else{
+                    return
+                }
+                self.search()
+                
+            })
+            .disposed(by: self.disposeBag)
     }
     
     private func bindDatas(){
@@ -274,6 +314,18 @@ final class ListVC: BaseVC {
         }
         .disposed(by: self.disposeBag)
             
+        output
+            .itemList
+            .asDriver()
+            .skip(1)
+            .filter {
+                $0.count == 0
+        }
+        .map { (_) -> String in
+            "조회된 결과가 없습니다."
+        }
+        .drive(onNext: CommonVManager.showMsg(msg:))
+        .disposed(by: self.disposeBag)
         
         output
             .randomItemList
@@ -295,16 +347,6 @@ final class ListVC: BaseVC {
             
         })
             .disposed(by: self.disposeBag)
-//        output
-//            .itemList
-//            .bind(to: self.tableV.rx
-//                .items(cellIdentifier: ListTableVCell.description(),
-//                       cellType: ListTableVCell.self)) {
-//                        (idx, cellData, cell) in
-//
-//                        cell.nameLB.text = cellData
-//        }
-//        .disposed(by: self.disposeBag)
         
         
     }
@@ -321,13 +363,39 @@ final class ListVC: BaseVC {
         guard self.isFirst == true else{
             return
         }
-        
+        self.isFirst = false
         CommonVManager.showLoadingV()
         self.vm.input
             .initializeData(completion: CommonVManager.hideLoadingV)
         
     }
     
+    private func search(){
+        
+        self.endKeyboard()
+        guard let uText = self.searchTF.text else{
+            
+            CommonVManager.showMsg(msg: "검색어를 확인해 주세요.")
+            return
+        }
+        
+        if uText.count == 0 {
+            
+            CommonVManager.showLoadingV()
+            self.vm
+                .input
+                .refreshData(completion: CommonVManager.hideLoadingV)
+            
+        }else{
+            
+            CommonVManager.showLoadingV()
+            self.vm.input
+                .searchKeyword(keyword: uText,
+                               completion: CommonVManager.hideLoadingV)
+            
+        }
+        
+    }
     @objc private func endKeyboard(){
         self.view.endEditing(true)
     }
@@ -336,7 +404,7 @@ final class ListVC: BaseVC {
 
 extension ListVC: UITableViewDelegate{
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 200
+        return 300
     }
 }
 

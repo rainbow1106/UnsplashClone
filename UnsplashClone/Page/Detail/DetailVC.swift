@@ -42,6 +42,7 @@ final class DetailVC: BaseVC {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.settingSubviews()
+        self.initVState()
         self.bindEvents()
         self.bindDatas()
     }
@@ -76,6 +77,10 @@ final class DetailVC: BaseVC {
         }
     }
 
+    private func initVState(){
+        self.colV.isHidden = true
+        self.pageLB.isHidden = true
+    }
     private func bindEvents(){
         
         self.closeBTN
@@ -166,6 +171,11 @@ final class DetailVC: BaseVC {
                 .scrollToItem(at: IndexPath(row: idx, section: 0),
                               at: UICollectionView.ScrollPosition.centeredHorizontally,
                               animated: false)
+            
+            self.colV.isHidden = false
+            self.pageLB.isHidden = false
+            
+            
         })
             .disposed(by: self.disposeBag)
         

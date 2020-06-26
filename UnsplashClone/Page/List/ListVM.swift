@@ -13,6 +13,9 @@ import RxCocoa
 protocol ListVMInput {
     func initializeData(completion: @escaping () -> Void)
     func moreData(completion: @escaping () -> Void)
+    func searchKeyword(keyword: String, completion: @escaping () -> Void)
+    func checkMoreAvailable() -> Bool
+    func refreshData(completion: @escaping () -> Void)
 }
 protocol ListVMOutput {
     var itemList: BehaviorRelay<[ListTableVCellDPModel]> { get }
@@ -38,8 +41,10 @@ final class ListVM: ListVMInput, ListVMOutput{
     private var page: Int = 1
     private let pageSize: Int = 20
     
-    private var originalDataList = [PhotoListItemData]()
-
+    private var originalDataList = [ListTableVCellDPModel]()
+    private var isMoreAvailable = true
+    private var isSearchMode = false
+    private var searchedKeyword = ""
     
     // MARK: - output
     var itemList = BehaviorRelay<[ListTableVCellDPModel]>(value: [ListTableVCellDPModel]())
@@ -47,17 +52,66 @@ final class ListVM: ListVMInput, ListVMOutput{
     var randomItemList = BehaviorRelay<[ListTableVCellDPModel]>(value: [ListTableVCellDPModel]())
     
     // MARK: - input
-    func moreData(completion: @escaping () -> Void){
+    func refreshData(completion: @escaping () -> Void){
         
-        self.worker
-            .photoList(page: self.page, pageSize: self.pageSize)
-            .subscribe(onNext: { [weak self](rList) in
+        self.resetPage()
+        
+        self.isSearchMode = false
+        
+        self.worker.photoList(page: self.page, pageSize: self.pageSize)
+            .subscribe(onNext: { [weak self](rData) in
                 
                 guard let self = self else{
                     return
                 }
-                self.parseListData(pData: rList)
+                self.parseListData(pData: rData)
                 self.page += 1
+                
+                },
+                       onError: { [weak self](rError) in
+                        
+                        guard let self = self else{
+                            return
+                        }
+                        self.error.accept(rError)
+                        
+                },
+                       onDisposed: completion)
+            .disposed(by: self.disposeBag)
+    }
+    func checkMoreAvailable() -> Bool{
+        return self.isMoreAvailable
+    }
+    func searchKeyword(keyword: String, completion: @escaping () -> Void){
+        
+        self.resetPage()
+        
+        self.searchedKeyword = keyword
+        self.isSearchMode = true
+        
+        self.worker
+            .searchKeyword(keyword: keyword,
+                           page: self.page,
+                           pageSize: self.pageSize)
+            .subscribe(onNext: { [weak self](rSearchResultData) in
+                
+                guard let self = self else{
+                    return
+                }
+                self.isMoreAvailable = true
+                if let totalPages = rSearchResultData.totalPages{
+                    if self.page == totalPages{
+                        self.isMoreAvailable = false
+                    }
+                    
+                }
+                self.page += 1
+                
+                guard let list = rSearchResultData.results else{
+                    return
+                }
+                self.parseListData(pData: list)
+                
                 
             },
                        onError: { [weak self](rError) in
@@ -67,9 +121,72 @@ final class ListVM: ListVMInput, ListVMOutput{
                         }
                         self.error.accept(rError)
                         
-            },
+                },
                        onDisposed: completion)
             .disposed(by: self.disposeBag)
+    }
+    func moreData(completion: @escaping () -> Void){
+        
+        if self.isSearchMode == true {
+            
+            self.worker.searchKeyword(keyword: self.searchedKeyword,
+                                      page: self.page,
+                                      pageSize: self.pageSize)
+                .subscribe(onNext: { [weak self](rSData) in
+                    
+                    guard let self = self else{
+                        return
+                    }
+                    
+                    self.isMoreAvailable = true
+                    if let totalPages = rSData.totalPages{
+                        if self.page == totalPages{
+                            self.isMoreAvailable = false
+                        }
+                        
+                    }
+                    self.page += 1
+                    
+                    guard let list = rSData.results else{
+                        return
+                    }
+                    self.parseListData(pData: list)
+                    
+                },
+                           onError: { [weak self](rError) in
+                            
+                            guard let self = self else{
+                                return
+                            }
+                            self.error.accept(rError)
+                },
+                           onDisposed: completion)
+                .disposed(by: self.disposeBag)
+            
+        }else{
+            
+            self.worker
+                .photoList(page: self.page, pageSize: self.pageSize)
+                .subscribe(onNext: { [weak self](rList) in
+                    
+                    guard let self = self else{
+                        return
+                    }
+                    self.parseListData(pData: rList)
+                    self.page += 1
+                    
+                    },
+                           onError: { [weak self](rError) in
+                            
+                            guard let self = self else{
+                                return
+                            }
+                            self.error.accept(rError)
+                            
+                    },
+                           onDisposed: completion)
+                .disposed(by: self.disposeBag)
+        }
         
     }
     func initializeData(completion: @escaping () -> Void){
@@ -88,7 +205,7 @@ final class ListVM: ListVMInput, ListVMOutput{
                 }
                 
                 let rList = arg.0
-                self.originalDataList.append(contentsOf: rList)
+
                 self.parseListData(pData: rList)
                 
                 let randomImgList = arg.1
@@ -143,9 +260,7 @@ final class ListVM: ListVMInput, ListVMOutput{
             
         }
         
-        var preList = self.randomItemList.value
-        preList.append(contentsOf: parsedList)
-        self.randomItemList.accept(preList)
+        self.randomItemList.accept(parsedList)
     }
     private func parseListData(pData: [PhotoListItemData]){
 
@@ -180,14 +295,16 @@ final class ListVM: ListVMInput, ListVMOutput{
             
         }
         
-        var preList = self.itemList.value
-        preList.append(contentsOf: parsedList)
-        self.itemList.accept(preList)
+        self.originalDataList.append(contentsOf: parsedList)
+        self.itemList.accept(self.originalDataList)
         
     }
     private func resetPage(){
         
         self.page = 1
         self.originalDataList.removeAll()
+        self.searchedKeyword = ""
+        self.isMoreAvailable = true
+        
     }
 }

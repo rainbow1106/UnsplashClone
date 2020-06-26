@@ -27,7 +27,7 @@ final class NaviManager{
         let vc = DetailVC()
         vc.userinfo = userinfo
         
-        UIApplication.topViewController()?.present(vc, animated: true, completion: nil)
+        UIApplication.topViewController()?.present(vc, animated: false, completion: nil)
         
     }
 }
