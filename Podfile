@@ -9,7 +9,6 @@ target 'UnsplashClone' do
   inhibit_all_warnings!
   
   # Pods for UnsplashClone
-  pod 'SnapKit'
   pod 'ALLoadingView'
   pod 'Toast-Swift'
   
