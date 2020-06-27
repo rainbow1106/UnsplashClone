@@ -9,6 +9,7 @@
 import UIKit
 import RxSwift
 import RxCocoa
+import Kingfisher
 
 final class ListVC: BaseVC {
 
@@ -345,6 +346,13 @@ final class ListVC: BaseVC {
             self.topImgV.backgroundColor = origin.color
             self.topImgV.kf.setImage(with: uUrl)
             
+            if let uFull = origin.imgUrl_original,
+                let uFullImgUrl = URL(string: uFull){
+                
+                self.randomFullImgWork(url: uFullImgUrl)
+                
+            }
+            
         })
             .disposed(by: self.disposeBag)
         
@@ -357,6 +365,36 @@ final class ListVC: BaseVC {
     }
     
     // MARK: - private
+    private func randomFullImgWork(url: URL){
+        
+        let global = ConcurrentDispatchQueueScheduler(qos: .background)
+        
+        self.loadFullImgObs(url: url)
+            .subscribeOn(global)
+            .asDriver(onErrorJustReturn: UIImage())
+            .drive(self.topImgV.rx.image)
+            .disposed(by: self.disposeBag)
+    }
+    private func loadFullImgObs(url: URL) -> Observable<UIImage>{
+        
+        return Observable.create { (emitter) -> Disposable in
+            
+            KingfisherManager.shared
+                .retrieveImage(with: url) { (rResult) in
+                    switch rResult{
+                    case .success(let rImgResult):
+                        
+                        emitter.onNext(rImgResult.image)
+                        emitter.onCompleted()
+                        
+                    case .failure(let rError):
+                        emitter.onError(rError)
+                    }
+            }
+            return Disposables.create()
+        }
+    }
+    
     private var isFirst = true
     private func initializeData(){
 
@@ -404,7 +442,7 @@ final class ListVC: BaseVC {
 
 extension ListVC: UITableViewDelegate{
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 300
+        return UITableView.automaticDimension
     }
 }
 

@@ -252,7 +252,6 @@ final class ListVM: ListVMInput, ListVMOutput{
             }
             rData.imgUrl_original = origin.urls?.full
             rData.imgUrl_thumb = origin.urls?.thumb
-            rData.imgUrl_raw = origin.urls?.raw
             
             rData.name = origin.user?.username
             
@@ -287,7 +286,6 @@ final class ListVM: ListVMInput, ListVMOutput{
             }
             rData.imgUrl_original = origin.urls?.full
             rData.imgUrl_thumb = origin.urls?.thumb
-            rData.imgUrl_raw = origin.urls?.raw
             
             rData.name = origin.user?.username
             

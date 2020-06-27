@@ -27,7 +27,8 @@ final class NaviManager{
         let vc = DetailVC()
         vc.userinfo = userinfo
         
-        UIApplication.topViewController()?.present(vc, animated: false, completion: nil)
+        CommonVManager.showLoadingV()
+        UIApplication.topViewController()?.present(vc, animated: false, completion: CommonVManager.hideLoadingV)
         
     }
 }

@@ -8,9 +8,12 @@
 
 import UIKit
 import Kingfisher
+import RxSwift
 
 final class DetailColVCell: UICollectionViewCell {
 
+    private var disposeBag = DisposeBag()
+    
     @IBOutlet weak var contentV: UIView!
     @IBOutlet weak var imgV: UIImageView!
     @IBOutlet weak var imgVHeight: NSLayoutConstraint!
@@ -52,6 +55,7 @@ final class DetailColVCell: UICollectionViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         self.imgV.kf.cancelDownloadTask()
+        self.disposeBag = DisposeBag()
     }
     
     public func mapCellData(cellData: ListTableVCellDPModel){
@@ -62,6 +66,12 @@ final class DetailColVCell: UICollectionViewCell {
             let url = URL(string: uThumb){
             
             self.imgV.kf.setImage(with: url)
+            
+        }
+        if let uFull = cellData.imgUrl_original,
+            let url = URL(string: uFull){
+            
+            self.fullImgWork(url: url)
             
         }
         self.imgV.backgroundColor = cellData.color
@@ -79,5 +89,36 @@ final class DetailColVCell: UICollectionViewCell {
         
         self.imgVHeight.constant = newHeight
         self.layoutIfNeeded()
+    }
+    
+    private func fullImgWork(url: URL){
+        
+        let global = ConcurrentDispatchQueueScheduler.init(qos: .background)
+        
+        self.loadFullImgObs(url: url)
+            .subscribeOn(global)
+            .asDriver(onErrorJustReturn: UIImage())
+            .drive(self.imgV.rx.image)
+            .disposed(by: self.disposeBag)
+        
+    }
+    private func loadFullImgObs(url: URL) -> Observable<UIImage>{
+        
+        return Observable.create { (emitter) -> Disposable in
+            
+            KingfisherManager.shared
+                .retrieveImage(with: url) { (rResult) in
+                    switch rResult{
+                    case .success(let rImgResult):
+                        
+                        emitter.onNext(rImgResult.image)
+                        emitter.onCompleted()
+                        
+                    case .failure(let rError):
+                        emitter.onError(rError)
+                    }
+            }
+            return Disposables.create()
+        }
     }
 }
